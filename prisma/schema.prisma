@@ -1,0 +1,57 @@
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Influencer {
+  id           String   @id @default(cuid())
+  name         String
+  avatar       String?
+  bio          String?
+  category     String
+  trustScore   Float
+  followers    Int
+  yearlyRevenue Float?
+  products     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  topics       Topic[]
+  claims       Claim[]
+}
+
+model Topic {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  influencers Influencer[]
+}
+
+model Claim {
+  id          String    @id @default(cuid())
+  content     String
+  status      String    // verified, questionable, debunked
+  trustScore  Float
+  date        DateTime  @default(now())
+  analysis    String?
+  influencer  Influencer @relation(fields: [influencerId], references: [id])
+  influencerId String
+  category    String
+  sources     Source[]
+
+  @@index([influencerId])
+}
+
+model Source {
+  id       String  @id @default(cuid())
+  url      String
+  title    String?
+  claim    Claim   @relation(fields: [claimId], references: [id])
+  claimId  String
+
+  @@index([claimId])
+}
+
