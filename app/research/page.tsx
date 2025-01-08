@@ -1,19 +1,36 @@
-import { DashboardLayout } from "@/components/dashboard-layout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { DashboardLayout } from "@/components/dashboard-layout";
+import { ResearchConfig } from "@/components/research-config";
 
-export default function ResearchConfigPage() {
+export default function ResearchPage() {
   return (
     <DashboardLayout>
-      <h1 className="text-4xl font-bold mb-6 text-primary">Research Configuration</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold text-primary">Research Parameters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">This page will allow configuration of research parameters.</p>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <a
+            href="/"
+            className="text-primary hover:text-primary/90 flex items-center gap-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-4 h-4"
+            >
+              <path d="m12 19-7-7 7-7" />
+              <path d="M19 12H5" />
+            </svg>
+            Back to Dashboard
+          </a>
+        </div>
+        <h1 className="text-4xl font-bold">Research Tasks</h1>
+        <ResearchConfig />
+      </div>
     </DashboardLayout>
-  )
+  );
 }
-
