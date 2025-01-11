@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
+  console.log("Fetching influencers...");
   try {
     const influencers = await prisma.influencer.findMany({
       include: {
@@ -13,8 +14,10 @@ export async function GET() {
         },
       },
     });
+    console.log(`Found ${influencers.length} influencers`);
     return NextResponse.json(influencers);
   } catch (error) {
+    console.error("Error fetching influencers:", error);
     return NextResponse.json(
       { error: "Error fetching influencers" },
       { status: 500 }

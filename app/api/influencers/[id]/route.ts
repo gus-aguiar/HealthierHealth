@@ -20,6 +20,12 @@ export async function GET(request: Request, { params }: Params) {
             sources: true,
           },
         },
+        tweets: {
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 10, // Limit to 10 most recent tweets
+        },
       },
     });
     return NextResponse.json(influencer);
