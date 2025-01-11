@@ -8,6 +8,38 @@ if (!PERPLEXITY_API_KEY) {
   );
 }
 
+// Add the missing exports that the verifyClaims route needs
+export function analyzeClaim(claim: string, scientificData: string[]): number {
+  // Simple similarity check (in production, you'd want a more sophisticated algorithm)
+  const normalizedClaim = claim.toLowerCase();
+  let maxSimilarity = 0;
+
+  for (const data of scientificData) {
+    const normalizedData = data.toLowerCase();
+    const similarity = calculateSimilarity(normalizedClaim, normalizedData);
+    maxSimilarity = Math.max(maxSimilarity, similarity);
+  }
+
+  return maxSimilarity;
+}
+
+export function categorizeClaimTrustScore(
+  similarity: number
+): "High" | "Medium" | "Low" {
+  if (similarity >= 0.7) return "High";
+  if (similarity >= 0.4) return "Medium";
+  return "Low";
+}
+
+// Helper function to calculate text similarity
+function calculateSimilarity(text1: string, text2: string): number {
+  const words1 = new Set(text1.split(" "));
+  const words2 = new Set(text2.split(" "));
+  const intersection = new Set([...words1].filter((x) => words2.has(x)));
+  const union = new Set([...words1, ...words2]);
+  return intersection.size / union.size;
+}
+
 const perplexityClient = axios.create({
   baseURL: "https://api.perplexity.ai",
   headers: {

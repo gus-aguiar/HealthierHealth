@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Leaderboard } from "@/components/leaderboard";
 
-export default function SearchPage() {
+function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q");
   const [results, setResults] = useState([]);
@@ -14,7 +14,7 @@ export default function SearchPage() {
     async function searchInfluencers() {
       try {
         const response = await fetch(
-          `/api/influencers?q=${encodeURIComponent(query)}`
+          `/api/influencers?q=${encodeURIComponent(query || "")}`
         );
         if (!response.ok) {
           throw new Error("Failed to search influencers");
@@ -42,5 +42,13 @@ export default function SearchPage() {
       <h1>Search Results for "{query}"</h1>
       <Leaderboard influencers={results} />
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div>Loading search...</div>}>
+      <SearchResults />
+    </Suspense>
   );
 }
