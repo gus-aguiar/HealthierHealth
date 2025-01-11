@@ -21,6 +21,7 @@ model Influencer {
   updatedAt     DateTime @updatedAt
   topics        Topic[]
   claims        Claim[]
+  tweets        Tweet[]
 }
 
 model Topic {
@@ -57,7 +58,7 @@ model Source {
 model ResearchTask {
   id               String   @id @default(cuid())
   researchType     String
-  timeRange        String
+  timeRange        String?  // Changed to optional
   influencerName   String?
   claimsToAnalyze  Int
   productsToFind   Int
@@ -68,5 +69,16 @@ model ResearchTask {
   status           String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model Tweet {
+  id        String   @id @default(cuid())
+  tweetId   String   @unique
+  content   String
+  createdAt DateTime
+  influencerId String
+  influencer Influencer @relation(fields: [influencerId], references: [id])
+
+  @@index([influencerId])
 }
 
