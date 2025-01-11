@@ -1,45 +1,56 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 interface Influencer {
-  id: string
-  name: string
-  avatar: string
-  category: string
-  trustScore: number
-  followers: number
-  claims: any[]
+  id: string;
+  name: string;
+  avatar: string;
+  category: string;
+  trustScore: number;
+  followers: number;
+  claims: any[];
 }
 
 export function Leaderboard() {
-  const [influencers, setInfluencers] = useState<Influencer[]>([])
-  const [loading, setLoading] = useState(true)
+  const [influencers, setInfluencers] = useState<Influencer[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchInfluencers() {
       try {
-        const response = await fetch('/api/influencers')
+        const response = await fetch("/api/influencers");
         if (!response.ok) {
-          throw new Error('Failed to fetch influencers')
+          throw new Error("Failed to fetch influencers");
         }
-        const data = await response.json()
-        setInfluencers(data)
+        const data = await response.json();
+        setInfluencers(data);
       } catch (error) {
-        console.error('Error:', error)
+        console.error("Error:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    fetchInfluencers()
-  }, [])
+    fetchInfluencers();
+  }, []);
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div>Carregando...</div>;
+  }
+
+  if (influencers.length === 0) {
+    return <div>Nenhum dado de influenciador disponível.</div>;
   }
 
   return (
@@ -61,9 +72,12 @@ export function Leaderboard() {
             <TableRow key={influencer.id}>
               <TableCell className="font-medium">#{index + 1}</TableCell>
               <TableCell>
-                <Link href={`/influencer/${influencer.id}`} className="flex items-center gap-2 hover:underline">
+                <Link
+                  href={`/influencer/${influencer.id}`}
+                  className="flex items-center gap-2 hover:underline"
+                >
                   <img
-                    src={influencer.avatar || '/placeholder.svg'}
+                    src={influencer.avatar || "/placeholder.svg"}
                     alt={influencer.name}
                     className="rounded-full w-10 h-10"
                   />
@@ -72,17 +86,25 @@ export function Leaderboard() {
               </TableCell>
               <TableCell>{influencer.category}</TableCell>
               <TableCell>
-                <Badge variant={influencer.trustScore >= 90 ? "default" : "secondary"}>
-                  {influencer.trustScore}%
+                <Badge
+                  variant={
+                    influencer.trustScore >= 90 ? "default" : "secondary"
+                  }
+                >
+                  {influencer.trustScore.toFixed(2)}%
                 </Badge>
               </TableCell>
               <TableCell>{influencer.followers.toLocaleString()}</TableCell>
-              <TableCell className="text-right">{influencer.claims.filter(c => c.status === 'verified').length}</TableCell>
+              <TableCell className="text-right">
+                {
+                  influencer.claims.filter((c) => c.status === "verified")
+                    .length
+                }
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }
-
