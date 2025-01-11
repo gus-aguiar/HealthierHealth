@@ -8,6 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Settings, Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { ErrorModal } from "@/components/error-modal";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const journals = [
   "PubMed Central",
@@ -19,8 +22,19 @@ const journals = [
   "JAMA Network",
 ];
 
+const MOCKED_USERNAMES = [
+  "john_doe",
+  "suzie_q",
+  "dr_health_guru",
+  "fitness_fanatic",
+  "wellness_wizard",
+];
+
 export function ResearchConfig() {
-  const [timeRange, setTimeRange] = useState("last-month");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
   const [selectedJournals, setSelectedJournals] = useState<string[]>(journals);
   const [includeRevenue, setIncludeRevenue] = useState(true);
   const [verifyScientific, setVerifyScientific] = useState(true);
@@ -32,6 +46,46 @@ export function ResearchConfig() {
   const [productsToFind, setProductsToFind] = useState("10");
   const [notes, setNotes] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [twitterUsername, setTwitterUsername] = useState("");
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [tweetLimit, setTweetLimit] = useState("10");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await response.json();
+      if (data.authenticated) {
+        setIsAuthenticated(true);
+        toast({
+          title: "Login Successful",
+          description: "You are now logged in.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Authentication Failed",
+          description: "Invalid username or password",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred during login",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSelectAllJournals = () => {
     setSelectedJournals(journals);
@@ -50,16 +104,45 @@ export function ResearchConfig() {
   };
 
   const handleStartResearch = async () => {
+    if (!twitterUsername || !influencerName) {
+      toast({
+        title: "Error",
+        description: "Please enter both influencer name and Twitter username",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await fetch("/api/start-research", {
+      // Step 1: Create or update the influencer
+      const influencerResponse = await fetch("/api/influencers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: influencerName,
+          category: "Health",
+          trustScore: 0,
+          followers: 0,
+        }),
+      });
+
+      if (!influencerResponse.ok) {
+        throw new Error("Failed to create/update influencer");
+      }
+
+      const influencer = await influencerResponse.json();
+
+      // Step 2: Start the research task
+      const researchResponse = await fetch("/api/start-research", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           researchType,
-          timeRange,
           influencerName,
           claimsToAnalyze: parseInt(claimsToAnalyze),
           productsToFind: parseInt(productsToFind),
@@ -67,33 +150,86 @@ export function ResearchConfig() {
           verifyScientific,
           selectedJournals,
           notes,
+          twitterUsername,
+          tweetLimit: parseInt(tweetLimit),
+          influencerId: influencer.id,
         }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to start research");
+      if (!researchResponse.ok) {
+        const errorData = await researchResponse.json();
+        throw new Error(errorData.error || "Failed to start research task");
       }
+
+      const researchData = await researchResponse.json();
 
       toast({
         title: "Research Started",
-        description: `Research task ${data.taskId} has been initiated.`,
+        description: `Research task ${researchData.taskId} has been initiated. Fetched ${researchData.tweetsFetched} tweets and processed ${researchData.claimsProcessed} claims.`,
       });
+
+      // Update notes with research information
+      setNotes(
+        (prev) =>
+          `${prev}Analyzing tweets from @${twitterUsername} (Mocked Data)\nNumber of tweets: ${researchData.tweetsFetched}\nProcessed claims: ${researchData.claimsProcessed}`
+      );
     } catch (error) {
       console.error("Error starting research:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to start research. Please try again.",
-        variant: "destructive",
-      });
+      setErrorMessage(
+        error instanceof Error ? error.message : "An unknown error occurred"
+      );
+      setErrorModalOpen(true);
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle>Login to Research Config</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Username
+              </label>
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Password
+              </label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-card/50">
@@ -104,6 +240,15 @@ export function ResearchConfig() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        <Alert variant="warning" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Due to Twitter's API limitations, we are currently using mocked data
+            for tweets to demonstrate the app's functionality. To see the app
+            working, please use one of the following usernames: "john_doe",
+            "suzie_q", "dr_health_guru", "fitness_fanatic", "wellness_wizard",
+          </AlertDescription>
+        </Alert>
         <div className="grid gap-4 md:grid-cols-2">
           <Button
             variant={researchType === "specific" ? "default" : "outline"}
@@ -128,32 +273,35 @@ export function ResearchConfig() {
         </div>
 
         <div>
-          <h3 className="text-sm font-medium mb-2">Time Range</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {[
-              { value: "last-week", label: "Last Week" },
-              { value: "last-month", label: "Last Month" },
-              { value: "last-year", label: "Last Year" },
-              { value: "all-time", label: "All Time" },
-            ].map((option) => (
-              <Button
-                key={option.value}
-                variant={timeRange === option.value ? "default" : "outline"}
-                onClick={() => setTimeRange(option.value)}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        <div>
           <h3 className="text-sm font-medium mb-2">Influencer Name</h3>
           <Input
             placeholder="Enter influencer name"
             value={influencerName}
             onChange={(e) => setInfluencerName(e.target.value)}
           />
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium mb-2">Twitter Username</h3>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter Twitter username"
+              value={twitterUsername}
+              onChange={(e) => setTwitterUsername(e.target.value)}
+              className="flex-grow"
+            />
+            <Input
+              type="number"
+              placeholder="Tweet limit"
+              value={tweetLimit}
+              onChange={(e) => setTweetLimit(e.target.value)}
+              className="w-24"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Enter the Twitter username to analyze their recent health-related
+            tweets
+          </p>
         </div>
 
         <div>
@@ -273,9 +421,7 @@ export function ResearchConfig() {
         </div>
 
         <div>
-          <h3 className="text-sm font-medium mb-2">
-            Notes for Research Assistant
-          </h3>
+          <h3 className="text-sm font-medium mb-2">Notes</h3>
           <Textarea
             placeholder="Add any specific instructions or focus areas..."
             className="min-h-[100px]"
@@ -300,6 +446,11 @@ export function ResearchConfig() {
           )}
         </Button>
       </CardContent>
+      <ErrorModal
+        isOpen={errorModalOpen}
+        onClose={() => setErrorModalOpen(false)}
+        errorMessage={errorMessage}
+      />
     </Card>
   );
 }
