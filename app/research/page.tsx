@@ -1,5 +1,6 @@
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { ResearchConfig } from "@/components/research-config";
+import { ClaimVerifier } from "@/components/claim-verifier";
 
 export default function ResearchPage() {
   return (

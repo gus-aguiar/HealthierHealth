@@ -1,5 +1,5 @@
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { InfluencersList } from "@/components/influencers-list";
+import { InfluencersList } from "@/components/influencer-list";
 
 export default function InfluencersPage() {
   return (

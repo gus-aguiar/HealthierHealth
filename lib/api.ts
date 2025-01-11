@@ -1,16 +1,20 @@
-import { prisma } from './prisma'
+import { prisma } from "./prisma";
 
 export async function getInfluencer(id: string) {
-  return prisma.influencer.findUnique({
+  const influencer = await prisma.influencer.findUnique({
     where: { id },
     include: {
       topics: true,
       claims: {
         include: {
-          sources: true
-        }
-      }
-    }
-  })
-}
+          sources: true,
+        },
+      },
+      tweets: true,
+    },
+  });
 
+  console.log("Fetched influencer:", JSON.stringify(influencer, null, 2));
+
+  return influencer;
+}
